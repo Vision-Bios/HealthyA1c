@@ -83,8 +83,8 @@ enum FastingPalette: String, CaseIterable, Identifiable {
             )
         case .bloom:
             return LinearGradient(
-                colors: [Color(red: 0.07, green: 0.06, blue: 0.10),
-                         Color(red: 0.12, green: 0.08, blue: 0.14)],
+                colors: [Color(red: 0.99, green: 0.96, blue: 0.95),
+                         Color(red: 0.97, green: 0.95, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -97,8 +97,8 @@ enum FastingPalette: String, CaseIterable, Identifiable {
             )
         case .ember:
             return LinearGradient(
-                colors: [Color(red: 0.08, green: 0.05, blue: 0.06),
-                         Color(red: 0.16, green: 0.08, blue: 0.10)],
+                colors: [Color(red: 0.98, green: 0.96, blue: 0.92),
+                         Color(red: 0.96, green: 0.94, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -114,8 +114,39 @@ enum FastingPalette: String, CaseIterable, Identifiable {
         }
     }
 
-    var textColor: Color { .white }
-    var cardBackground: Color { .white.opacity(0.08) }
-    var inputBackground: Color { .white.opacity(0.10) }
-    var preferredScheme: ColorScheme { .dark }
+    var textColor: Color {
+        switch self {
+        case .bloom, .ember:
+            return .black
+        case .eclipse, .neon:
+            return .white
+        }
+    }
+
+    var cardBackground: Color {
+        switch self {
+        case .bloom, .ember:
+            return .white.opacity(0.85)
+        case .eclipse, .neon:
+            return .white.opacity(0.08)
+        }
+    }
+
+    var inputBackground: Color {
+        switch self {
+        case .bloom, .ember:
+            return .white.opacity(0.90)
+        case .eclipse, .neon:
+            return .white.opacity(0.10)
+        }
+    }
+
+    var preferredScheme: ColorScheme {
+        switch self {
+        case .bloom, .ember:
+            return .light
+        case .eclipse, .neon:
+            return .dark
+        }
+    }
 }

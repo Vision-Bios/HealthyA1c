@@ -67,25 +67,14 @@ struct GraphView: View {
                            let plotFrameAnchor = proxy.plotFrame {
                             let plotFrame = geo[plotFrameAnchor]
                             let yPosition = plotFrame.minY + yOffset
-                            let shadedHeight = max(0, plotFrame.maxY - yPosition)
 
-                            ZStack {
-                                Rectangle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(palette.gradient.opacity(0.12))
-                                    .frame(width: plotFrame.width, height: shadedHeight)
-                                    .position(x: plotFrame.midX, y: yPosition + shadedHeight / 2)
-
-                                Text("6.5%")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(palette.textColor)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 6)
-                                    .background(palette.cardBackground, in: Capsule())
-                                    .position(x: plotFrame.maxX - 60, y: yPosition - 12)
-                            }
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                            Text("6.5%")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(palette.textColor)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(palette.cardBackground, in: Capsule())
+                                .position(x: plotFrame.maxX - 60, y: yPosition - 12)
                         }
 
                         if let selectedEntry,

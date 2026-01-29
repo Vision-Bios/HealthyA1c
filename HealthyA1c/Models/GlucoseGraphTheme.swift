@@ -76,15 +76,15 @@ enum GlucosePalette: String, CaseIterable, Identifiable {
         switch self {
         case .solar:
             return LinearGradient(
-                colors: [Color(red: 0.10, green: 0.07, blue: 0.08),
-                         Color(red: 0.18, green: 0.09, blue: 0.08)],
+                colors: [Color(red: 0.98, green: 0.96, blue: 0.93),
+                         Color(red: 0.96, green: 0.94, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
         case .aurora:
             return LinearGradient(
-                colors: [Color(red: 0.06, green: 0.08, blue: 0.12),
-                         Color(red: 0.10, green: 0.08, blue: 0.16)],
+                colors: [Color(red: 0.94, green: 0.98, blue: 0.99),
+                         Color(red: 0.92, green: 0.96, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -114,8 +114,39 @@ enum GlucosePalette: String, CaseIterable, Identifiable {
         }
     }
 
-    var textColor: Color { .white }
-    var cardBackground: Color { .white.opacity(0.08) }
-    var inputBackground: Color { .white.opacity(0.10) }
-    var preferredScheme: ColorScheme { .dark }
+    var textColor: Color {
+        switch self {
+        case .solar, .aurora:
+            return .black
+        case .magma, .prism:
+            return .white
+        }
+    }
+
+    var cardBackground: Color {
+        switch self {
+        case .solar, .aurora:
+            return .white.opacity(0.85)
+        case .magma, .prism:
+            return .white.opacity(0.08)
+        }
+    }
+
+    var inputBackground: Color {
+        switch self {
+        case .solar, .aurora:
+            return .white.opacity(0.90)
+        case .magma, .prism:
+            return .white.opacity(0.10)
+        }
+    }
+
+    var preferredScheme: ColorScheme {
+        switch self {
+        case .solar, .aurora:
+            return .light
+        case .magma, .prism:
+            return .dark
+        }
+    }
 }

@@ -76,8 +76,8 @@ enum BodyPalette: String, CaseIterable, Identifiable {
         switch self {
         case .aurora:
             return LinearGradient(
-                colors: [Color(red: 0.05, green: 0.08, blue: 0.12),
-                         Color(red: 0.10, green: 0.07, blue: 0.14)],
+                colors: [Color(red: 0.94, green: 0.98, blue: 0.99),
+                         Color(red: 0.92, green: 0.96, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -97,8 +97,8 @@ enum BodyPalette: String, CaseIterable, Identifiable {
             )
         case .prism:
             return LinearGradient(
-                colors: [Color(red: 0.06, green: 0.05, blue: 0.10),
-                         Color(red: 0.08, green: 0.06, blue: 0.14)],
+                colors: [Color(red: 0.95, green: 0.96, blue: 0.99),
+                         Color(red: 0.94, green: 0.95, blue: 0.98)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -115,18 +115,38 @@ enum BodyPalette: String, CaseIterable, Identifiable {
     }
 
     var textColor: Color {
-        return .white
+        switch self {
+        case .aurora, .prism:
+            return .black
+        case .ember, .deep:
+            return .white
+        }
     }
 
     var cardBackground: Color {
-        return .white.opacity(0.08)
+        switch self {
+        case .aurora, .prism:
+            return .white.opacity(0.85)
+        case .ember, .deep:
+            return .white.opacity(0.08)
+        }
     }
 
     var inputBackground: Color {
-        return .white.opacity(0.10)
+        switch self {
+        case .aurora, .prism:
+            return .white.opacity(0.90)
+        case .ember, .deep:
+            return .white.opacity(0.10)
+        }
     }
 
     var preferredScheme: ColorScheme {
-        return .dark
+        switch self {
+        case .aurora, .prism:
+            return .light
+        case .ember, .deep:
+            return .dark
+        }
     }
 }
