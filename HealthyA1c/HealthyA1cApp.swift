@@ -11,7 +11,7 @@ import SwiftUI
 struct HealthyA1cApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }

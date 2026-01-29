@@ -1,19 +1,12 @@
-//
-//  ContentView.swift
-//  HealthyA1c
-//
-//  Created by Mohamad Alayouni on 1/20/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    @StateObject private var viewModel = HbA1cViewModel()
-    @State private var valueText = ""
+struct ExerciseView: View {
+    @StateObject private var viewModel = ExerciseViewModel()
+    @State private var minutesText = ""
     @State private var date = Date()
-    @State private var onMeds = false
-    @FocusState private var isValueFocused: Bool
-    @State private var editingEntry: HbA1cEntry?
+    @State private var showSaveError = false
+    @FocusState private var isMinutesFocused: Bool
+    @State private var editingEntry: ExerciseEntry?
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -23,33 +16,34 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            ThemeBackgroundView(palette: viewModel.selectedPalette)
+            ExerciseThemeBackgroundView(palette: viewModel.selectedPalette)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("HbA1c")
+                        Text("Walking")
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
                         HStack(spacing: 10) {
-                            TextField("A1c", text: $valueText)
-                                .keyboardType(.decimalPad)
+                            TextField("Minutes", text: $minutesText)
+                                .keyboardType(.numberPad)
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 12)
                                 .background(viewModel.selectedPalette.inputBackground,
                                             in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(.white.opacity(0.25), lineWidth: 0.5)
+                                        .stroke(.white.opacity(0.2), lineWidth: 0.5)
                                 )
-                                .focused($isValueFocused)
+                                .focused($isMinutesFocused)
 
                             Button("Add") {
-                                addEntry()
+                                addMinutes()
                             }
                             .buttonStyle(.borderedProminent)
-                            .disabled(parsedValue == nil)
+                            .tint(viewModel.selectedPalette.glow)
+                            .disabled(parsedMinutes == nil)
                         }
 
                         DatePicker("", selection: $date, displayedComponents: .date)
@@ -58,12 +52,15 @@ struct ContentView: View {
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
                         HStack {
-                            Toggle("Meds", isOn: $onMeds)
-                                .toggleStyle(.switch)
-                                .tint(viewModel.selectedPalette.glow)
+                            Text("Goal 60 min/day")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                            Spacer()
+                            Text("Remaining \(remainingText)")
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(viewModel.selectedPalette.textColor)
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                         .background(viewModel.selectedPalette.cardBackground,
                                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -74,9 +71,9 @@ struct ContentView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        GraphView(entries: viewModel.entries,
-                                  theme: viewModel.selectedTheme,
-                                  palette: viewModel.selectedPalette)
+                        ExerciseGraphView(entries: viewModel.entries,
+                                          theme: viewModel.selectedTheme,
+                                          palette: viewModel.selectedPalette)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -85,7 +82,7 @@ struct ContentView: View {
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
                         Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(GraphTheme.allCases) { theme in
+                            ForEach(ExerciseGraphTheme.allCases) { theme in
                                 Text(theme.title).tag(theme)
                             }
                         }
@@ -93,7 +90,7 @@ struct ContentView: View {
                         .tint(viewModel.selectedPalette.glow)
 
                         Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(GraphPalette.allCases) { palette in
+                            ForEach(ExercisePalette.allCases) { palette in
                                 Text(palette.title).tag(palette)
                             }
                         }
@@ -106,10 +103,10 @@ struct ContentView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        ForEach(viewModel.entries.reversed()) { entry in
-                            HStack {
+                        ForEach(viewModel.entries.sorted(by: { $0.date > $1.date })) { entry in
+                            HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(String(format: "%.1f", entry.value))
+                                    Text("\(entry.minutes) min")
                                         .font(.title3.weight(.semibold))
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(dateFormatter.string(from: entry.date))
@@ -117,14 +114,6 @@ struct ContentView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if entry.onMeds {
-                                    Text("Meds")
-                                        .font(.caption2.weight(.semibold))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(viewModel.selectedPalette.gradient.opacity(0.25),
-                                                    in: Capsule())
-                                }
                             }
                             .padding(12)
                             .background(viewModel.selectedPalette.cardBackground,
@@ -141,82 +130,102 @@ struct ContentView: View {
                             }
                         }
                     }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Goal: 60 minutes per day.")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedPalette.textColor)
+                        Text("Add walks throughout the day; totals update for the same date.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding()
             }
         }
         .environment(\.colorScheme, viewModel.selectedPalette.preferredScheme)
+        .alert("Couldn’t save", isPresented: $showSaveError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please enter minutes greater than zero.")
+        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    isValueFocused = false
+                    isMinutesFocused = false
                 }
             }
         }
         .sheet(item: $editingEntry) { entry in
-            HbA1cEditSheet(entry: entry,
-                           palette: viewModel.selectedPalette,
-                           onDelete: {
-                               viewModel.deleteEntry(entry)
-                           }) { updated in
+            ExerciseEditSheet(entry: entry,
+                              palette: viewModel.selectedPalette,
+                              onDelete: {
+                                  viewModel.deleteEntry(entry)
+                              }) { updated in
                 viewModel.updateEntry(id: updated.id,
                                       date: updated.date,
-                                      value: updated.value,
-                                      onMeds: updated.onMeds)
+                                      minutes: updated.minutes)
             }
         }
     }
 
-    private var parsedValue: Double? {
-        Double(valueText.replacingOccurrences(of: ",", with: "."))
+    private var parsedMinutes: Int? {
+        Int(minutesText.trimmingCharacters(in: .whitespaces))
     }
 
-    private func addEntry() {
-        guard let value = parsedValue else { return }
-        viewModel.addEntry(date: date, value: value, onMeds: onMeds)
-        valueText = ""
-        isValueFocused = false
+    private var remainingText: String {
+        let total = viewModel.entries
+            .first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })?.minutes ?? 0
+        return "\(max(60 - total, 0)) min"
+    }
+
+    private func addMinutes() {
+        guard let minutes = parsedMinutes else { return }
+        let saved = viewModel.addMinutes(date: date, minutes: minutes)
+        if saved {
+            minutesText = ""
+            isMinutesFocused = false
+        } else {
+            showSaveError = true
+        }
     }
 }
 
 #Preview {
-    ContentView()
+    ExerciseView()
 }
 
-private struct HbA1cEditSheet: View {
-    let entry: HbA1cEntry
-    let palette: GraphPalette
+private struct ExerciseEditSheet: View {
+    let entry: ExerciseEntry
+    let palette: ExercisePalette
     let onDelete: () -> Void
-    let onSave: (HbA1cEntry) -> Void
+    let onSave: (ExerciseEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var valueText: String
+    @State private var minutesText: String
     @State private var date: Date
-    @State private var onMeds: Bool
 
-    init(entry: HbA1cEntry,
-         palette: GraphPalette,
+    init(entry: ExerciseEntry,
+         palette: ExercisePalette,
          onDelete: @escaping () -> Void,
-         onSave: @escaping (HbA1cEntry) -> Void) {
+         onSave: @escaping (ExerciseEntry) -> Void) {
         self.entry = entry
         self.palette = palette
         self.onDelete = onDelete
         self.onSave = onSave
-        _valueText = State(initialValue: String(format: "%.1f", entry.value))
+        _minutesText = State(initialValue: String(entry.minutes))
         _date = State(initialValue: entry.date)
-        _onMeds = State(initialValue: entry.onMeds)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                TextField("HbA1c", text: $valueText)
-                    .keyboardType(.decimalPad)
+                TextField("Minutes", text: $minutesText)
+                    .keyboardType(.numberPad)
                 DatePicker("Date", selection: $date, displayedComponents: .date)
-                Toggle("Meds", isOn: $onMeds)
             }
-            .navigationTitle("Edit A1c")
+            .navigationTitle("Edit Walk")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -229,8 +238,8 @@ private struct HbA1cEditSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        guard let value = Double(valueText.replacingOccurrences(of: ",", with: ".")) else { return }
-                        onSave(HbA1cEntry(id: entry.id, date: date, value: value, onMeds: onMeds))
+                        guard let minutes = Int(minutesText) else { return }
+                        onSave(ExerciseEntry(id: entry.id, date: date, minutes: minutes))
                         dismiss()
                     }
                 }

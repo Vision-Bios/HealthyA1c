@@ -1,19 +1,11 @@
-//
-//  ContentView.swift
-//  HealthyA1c
-//
-//  Created by Mohamad Alayouni on 1/20/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    @StateObject private var viewModel = HbA1cViewModel()
+struct GlucoseView: View {
+    @StateObject private var viewModel = GlucoseViewModel()
     @State private var valueText = ""
     @State private var date = Date()
-    @State private var onMeds = false
     @FocusState private var isValueFocused: Bool
-    @State private var editingEntry: HbA1cEntry?
+    @State private var editingEntry: GlucoseEntry?
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -23,17 +15,17 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            ThemeBackgroundView(palette: viewModel.selectedPalette)
+            GlucoseThemeBackgroundView(palette: viewModel.selectedPalette)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("HbA1c")
+                        Text("Glucose")
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
                         HStack(spacing: 10) {
-                            TextField("A1c", text: $valueText)
+                            TextField("mg/dL", text: $valueText)
                                 .keyboardType(.decimalPad)
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 12)
@@ -41,7 +33,7 @@ struct ContentView: View {
                                             in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(.white.opacity(0.25), lineWidth: 0.5)
+                                        .stroke(.white.opacity(0.2), lineWidth: 0.5)
                                 )
                                 .focused($isValueFocused)
 
@@ -49,6 +41,7 @@ struct ContentView: View {
                                 addEntry()
                             }
                             .buttonStyle(.borderedProminent)
+                            .tint(viewModel.selectedPalette.glow)
                             .disabled(parsedValue == nil)
                         }
 
@@ -57,16 +50,13 @@ struct ContentView: View {
                             .labelsHidden()
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        HStack {
-                            Toggle("Meds", isOn: $onMeds)
-                                .toggleStyle(.switch)
-                                .tint(viewModel.selectedPalette.glow)
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                        Picker("Type", selection: $viewModel.selectedType) {
+                            ForEach(GlucoseType.allCases) { type in
+                                Text(type.title).tag(type)
+                            }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(viewModel.selectedPalette.cardBackground,
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .pickerStyle(.segmented)
+                        .tint(viewModel.selectedPalette.glow)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -74,9 +64,10 @@ struct ContentView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        GraphView(entries: viewModel.entries,
-                                  theme: viewModel.selectedTheme,
-                                  palette: viewModel.selectedPalette)
+                        GlucoseGraphView(entries: viewModel.filteredEntries,
+                                         type: viewModel.selectedType,
+                                         theme: viewModel.selectedTheme,
+                                         palette: viewModel.selectedPalette)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -85,7 +76,7 @@ struct ContentView: View {
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
                         Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(GraphTheme.allCases) { theme in
+                            ForEach(GlucoseGraphTheme.allCases) { theme in
                                 Text(theme.title).tag(theme)
                             }
                         }
@@ -93,7 +84,7 @@ struct ContentView: View {
                         .tint(viewModel.selectedPalette.glow)
 
                         Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(GraphPalette.allCases) { palette in
+                            ForEach(GlucosePalette.allCases) { palette in
                                 Text(palette.title).tag(palette)
                             }
                         }
@@ -106,25 +97,20 @@ struct ContentView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        ForEach(viewModel.entries.reversed()) { entry in
+                        ForEach(viewModel.filteredEntries.reversed()) { entry in
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(String(format: "%.1f", entry.value))
+                                    Text(String(format: "%.0f mg/dL", entry.value))
                                         .font(.title3.weight(.semibold))
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
-                                    Text(dateFormatter.string(from: entry.date))
+                                    Text(entry.type.title)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if entry.onMeds {
-                                    Text("Meds")
-                                        .font(.caption2.weight(.semibold))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(viewModel.selectedPalette.gradient.opacity(0.25),
-                                                    in: Capsule())
-                                }
+                                Text(dateFormatter.string(from: entry.date))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
                             .padding(12)
                             .background(viewModel.selectedPalette.cardBackground,
@@ -141,6 +127,31 @@ struct ContentView: View {
                             }
                         }
                     }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Fasting: no calories for 8+ hours.")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedPalette.textColor)
+                        Text("Post‑meal: 2 hours after eating.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("Random: any time of day.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Text("Ranges:")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedPalette.textColor)
+                        Text("Fasting: Normal 70–99, Prediabetes 100–125, Diabetes ≥126 (2 tests).")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("Post‑meal: Normal <140, Prediabetes 140–199, Diabetes ≥200.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("Random: Normal typically <140, Diabetes likely ≥200.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding()
             }
@@ -155,15 +166,15 @@ struct ContentView: View {
             }
         }
         .sheet(item: $editingEntry) { entry in
-            HbA1cEditSheet(entry: entry,
-                           palette: viewModel.selectedPalette,
-                           onDelete: {
-                               viewModel.deleteEntry(entry)
-                           }) { updated in
+            GlucoseEditSheet(entry: entry,
+                             palette: viewModel.selectedPalette,
+                             onDelete: {
+                                 viewModel.deleteEntry(entry)
+                             }) { updated in
                 viewModel.updateEntry(id: updated.id,
                                       date: updated.date,
                                       value: updated.value,
-                                      onMeds: updated.onMeds)
+                                      type: updated.type)
             }
         }
     }
@@ -174,49 +185,53 @@ struct ContentView: View {
 
     private func addEntry() {
         guard let value = parsedValue else { return }
-        viewModel.addEntry(date: date, value: value, onMeds: onMeds)
+        viewModel.addEntry(date: date, value: value, type: viewModel.selectedType)
         valueText = ""
         isValueFocused = false
     }
 }
 
 #Preview {
-    ContentView()
+    GlucoseView()
 }
 
-private struct HbA1cEditSheet: View {
-    let entry: HbA1cEntry
-    let palette: GraphPalette
+private struct GlucoseEditSheet: View {
+    let entry: GlucoseEntry
+    let palette: GlucosePalette
     let onDelete: () -> Void
-    let onSave: (HbA1cEntry) -> Void
+    let onSave: (GlucoseEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var valueText: String
     @State private var date: Date
-    @State private var onMeds: Bool
+    @State private var type: GlucoseType
 
-    init(entry: HbA1cEntry,
-         palette: GraphPalette,
+    init(entry: GlucoseEntry,
+         palette: GlucosePalette,
          onDelete: @escaping () -> Void,
-         onSave: @escaping (HbA1cEntry) -> Void) {
+         onSave: @escaping (GlucoseEntry) -> Void) {
         self.entry = entry
         self.palette = palette
         self.onDelete = onDelete
         self.onSave = onSave
-        _valueText = State(initialValue: String(format: "%.1f", entry.value))
+        _valueText = State(initialValue: String(format: "%.0f", entry.value))
         _date = State(initialValue: entry.date)
-        _onMeds = State(initialValue: entry.onMeds)
+        _type = State(initialValue: entry.type)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                TextField("HbA1c", text: $valueText)
+                TextField("mg/dL", text: $valueText)
                     .keyboardType(.decimalPad)
                 DatePicker("Date", selection: $date, displayedComponents: .date)
-                Toggle("Meds", isOn: $onMeds)
+                Picker("Type", selection: $type) {
+                    ForEach(GlucoseType.allCases) { t in
+                        Text(t.title).tag(t)
+                    }
+                }
             }
-            .navigationTitle("Edit A1c")
+            .navigationTitle("Edit Glucose")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -230,7 +245,7 @@ private struct HbA1cEditSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         guard let value = Double(valueText.replacingOccurrences(of: ",", with: ".")) else { return }
-                        onSave(HbA1cEntry(id: entry.id, date: date, value: value, onMeds: onMeds))
+                        onSave(GlucoseEntry(id: entry.id, date: date, value: value, type: type))
                         dismiss()
                     }
                 }
