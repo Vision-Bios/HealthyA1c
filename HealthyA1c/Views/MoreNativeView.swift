@@ -10,9 +10,6 @@ struct MoreNativeView: View {
                 NavigationLink(destination: GlucoseView()) {
                     Label("Glucose", systemImage: "drop.fill")
                 }
-                NavigationLink(destination: GlucosuriaView()) {
-                    Label("Glucosuria", systemImage: "testtube.2")
-                }
                 NavigationLink(destination: MealsView()) {
                     Label("Diet", systemImage: "fork.knife")
                 }

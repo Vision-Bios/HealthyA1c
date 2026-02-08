@@ -5,7 +5,7 @@ struct RootView: View {
         TabView {
             TodaysFocusView()
                 .tabItem {
-                    Label("Focus", systemImage: "sparkles")
+                    Label("Focus", systemImage: "target")
                 }
 
             PointsView()
