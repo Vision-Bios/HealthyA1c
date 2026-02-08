@@ -5,6 +5,8 @@ struct FastingView: View {
     @AppStorage("fastingGoalHours") private var goalHoursRaw = FastingGoal.hour24.rawValue
     @Environment(\.dismiss) private var dismiss
     @State private var editingEntry: FastingEntry?
+    @State private var isEditingGraph = false
+    @State private var actionPulse = false
 
     private enum FastingGoal: String, CaseIterable, Identifiable {
         case hour24
@@ -100,15 +102,21 @@ struct FastingView: View {
                         if viewModel.activeStartDate == nil {
                             Button("Start") {
                                 viewModel.startFast()
+                                triggerActionFeedback()
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedPalette.glow)
+                            .scaleEffect(actionPulse ? 1.06 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
                         } else {
                             Button("End & Save") {
                                 _ = viewModel.endFast()
+                                triggerActionFeedback()
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedPalette.glow)
+                            .scaleEffect(actionPulse ? 1.06 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
                         }
                     }
 
@@ -117,32 +125,72 @@ struct FastingView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        HStack(spacing: 8) {
+                            Spacer()
+                            if isEditingGraph {
+                                Button("Done") {
+                                    isEditingGraph = false
+                                }
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                            }
+
+                            Button {
+                                isEditingGraph.toggle()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "paintpalette.fill")
+                                    Text("Customize")
+                                }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         FastingGraphView(entries: viewModel.entries,
                                          theme: viewModel.selectedTheme,
                                          palette: viewModel.selectedPalette)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 20)
+                                .onEnded { value in
+                                    guard isEditingGraph else { return }
+                                    let dx = value.translation.width
+                                    let dy = value.translation.height
+                                    if abs(dx) > abs(dy) {
+                                        if dx > 0 {
+                                            viewModel.selectedPalette = nextPalette(from: viewModel.selectedPalette)
+                                        } else {
+                                            viewModel.selectedPalette = previousPalette(from: viewModel.selectedPalette)
+                                        }
+                                    } else {
+                                        if dy < 0 {
+                                            viewModel.selectedTheme = nextTheme(from: viewModel.selectedTheme)
+                                        } else {
+                                            viewModel.selectedTheme = previousTheme(from: viewModel.selectedTheme)
+                                        }
+                                    }
+                                }
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Theme")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(FastingGraphTheme.allCases) { theme in
-                                Text(theme.title).tag(theme)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-
-                        Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(FastingPalette.allCases) { palette in
-                                Text(palette.title).tag(palette)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-                    }
+                    Text(isEditingGraph
+                         ? "Swipe left/right to change color. Swipe up/down to change style."
+                         : "Tap Customize to edit color and style.")
+                        .font(.caption)
+                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(viewModel.selectedPalette.cardBackground.opacity(0.9),
+                                    in: Capsule())
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("History")
@@ -215,6 +263,16 @@ struct FastingView: View {
         FastingGoal(rawValue: goalHoursRaw) ?? .hour24
     }
 
+    private func triggerActionFeedback() {
+        FunFeedback.shared.heavyPulse()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
+            actionPulse = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            actionPulse = false
+        }
+    }
+
     private func formatDuration(_ hours: Double) -> String {
         let totalMinutes = max(0, Int(hours * 60))
         if totalMinutes < 60 {
@@ -234,6 +292,32 @@ struct FastingView: View {
         let m = (totalSeconds % 3600) / 60
         let s = totalSeconds % 60
         return String(format: "%02d:%02d:%02d", h, m, s)
+    }
+
+    private func nextPalette(from palette: FastingPalette) -> FastingPalette {
+        let all = FastingPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousPalette(from palette: FastingPalette) -> FastingPalette {
+        let all = FastingPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
+    }
+
+    private func nextTheme(from theme: FastingGraphTheme) -> FastingGraphTheme {
+        let all = FastingGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousTheme(from theme: FastingGraphTheme) -> FastingGraphTheme {
+        let all = FastingGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
     }
 }
 

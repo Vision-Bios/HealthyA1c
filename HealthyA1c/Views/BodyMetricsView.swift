@@ -4,29 +4,13 @@ struct BodyMetricsView: View {
     @StateObject private var viewModel = BodyMetricsViewModel()
     @State private var weightText = ""
     @State private var date = Date()
-    @AppStorage("bodyHeightValue") private var heightText = ""
-    @AppStorage("bodyHeightFeet") private var heightFeetText = ""
-    @AppStorage("bodyHeightInches") private var heightInchesText = ""
-    @AppStorage("bodyHeightUnit") private var heightUnitRaw = HeightUnit.meters.rawValue
     @FocusState private var focusedField: Field?
     @State private var editingEntry: BodyMetricsEntry?
+    @State private var isEditingGraph = false
+    @State private var addPulse = false
 
     private enum Field {
         case weight
-        case height
-    }
-
-    private enum HeightUnit: String, CaseIterable, Identifiable {
-        case meters
-        case feetInches
-
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .meters: return "m"
-            case .feetInches: return "ft & in"
-            }
-        }
     }
 
     private let dateFormatter: DateFormatter = {
@@ -59,12 +43,12 @@ struct BodyMetricsView: View {
                                 )
                                 .focused($focusedField, equals: .weight)
 
-                            Button("Add") {
-                                addEntry()
-                            }
+                            Button("Add") { addEntry() }
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedPalette.glow)
                             .disabled(parsedWeight == nil)
+                            .scaleEffect(addPulse ? 1.06 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: addPulse)
                         }
 
                         DatePicker("", selection: $date, displayedComponents: .date)
@@ -72,55 +56,6 @@ struct BodyMetricsView: View {
                             .labelsHidden()
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        VStack(spacing: 10) {
-                            HStack(spacing: 10) {
-                                if heightUnit == .meters {
-                                    TextField("Height", text: $heightText)
-                                        .keyboardType(.decimalPad)
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .background(viewModel.selectedPalette.inputBackground,
-                                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
-                                        )
-                                        .focused($focusedField, equals: .height)
-                                } else {
-                                    TextField("ft", text: $heightFeetText)
-                                        .keyboardType(.numberPad)
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .background(viewModel.selectedPalette.inputBackground,
-                                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
-                                        )
-                                        .focused($focusedField, equals: .height)
-
-                                    TextField("in", text: $heightInchesText)
-                                        .keyboardType(.numberPad)
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .background(viewModel.selectedPalette.inputBackground,
-                                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
-                                        )
-                                        .focused($focusedField, equals: .height)
-                                }
-                            }
-
-                            Picker("Unit", selection: $heightUnitRaw) {
-                                ForEach(HeightUnit.allCases) { unit in
-                                    Text(unit.title).tag(unit.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .tint(viewModel.selectedPalette.glow)
-                        }
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -128,33 +63,72 @@ struct BodyMetricsView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        HStack(spacing: 8) {
+                            Spacer()
+                            if isEditingGraph {
+                                Button("Done") {
+                                    isEditingGraph = false
+                                }
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                            }
+
+                            Button {
+                                isEditingGraph.toggle()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "paintpalette.fill")
+                                    Text("Customize")
+                                }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         BodyGraphView(entries: viewModel.entries,
                                       theme: viewModel.selectedTheme,
-                                      palette: viewModel.selectedPalette,
-                                      healthyWeightRange: healthyWeightRange)
+                                      palette: viewModel.selectedPalette)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 20)
+                                .onEnded { value in
+                                    guard isEditingGraph else { return }
+                                    let dx = value.translation.width
+                                    let dy = value.translation.height
+                                    if abs(dx) > abs(dy) {
+                                        if dx > 0 {
+                                            viewModel.selectedPalette = nextPalette(from: viewModel.selectedPalette)
+                                        } else {
+                                            viewModel.selectedPalette = previousPalette(from: viewModel.selectedPalette)
+                                        }
+                                    } else {
+                                        if dy < 0 {
+                                            viewModel.selectedTheme = nextTheme(from: viewModel.selectedTheme)
+                                        } else {
+                                            viewModel.selectedTheme = previousTheme(from: viewModel.selectedTheme)
+                                        }
+                                    }
+                                }
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Theme")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(BodyGraphTheme.allCases) { theme in
-                                Text(theme.title).tag(theme)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-
-                        Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(BodyPalette.allCases) { palette in
-                                Text(palette.title).tag(palette)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-                    }
+                    Text(isEditingGraph
+                         ? "Swipe left/right to change color. Swipe up/down to change style."
+                         : "Tap Customize to edit color and style.")
+                        .font(.caption)
+                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(viewModel.selectedPalette.cardBackground.opacity(0.9),
+                                    in: Capsule())
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("History")
@@ -189,14 +163,6 @@ struct BodyMetricsView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("BMI = weight(kg) / height(m)²")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Healthy range: 18.5–24.9. Dashed lines show your weight range.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding()
             }
@@ -227,47 +193,44 @@ struct BodyMetricsView: View {
         Double(weightText.replacingOccurrences(of: ",", with: "."))
     }
 
-    private var parsedHeight: Double? {
-        Double(heightText.replacingOccurrences(of: ",", with: "."))
-    }
-
-    private var parsedFeet: Double? {
-        Double(heightFeetText.replacingOccurrences(of: ",", with: "."))
-    }
-
-    private var parsedInches: Double? {
-        Double(heightInchesText.replacingOccurrences(of: ",", with: "."))
-    }
-
-    private var heightUnit: HeightUnit {
-        HeightUnit(rawValue: heightUnitRaw) ?? .meters
-    }
-
-    private var healthyWeightRange: ClosedRange<Double>? {
-        let heightMeters: Double
-        switch heightUnit {
-        case .meters:
-            guard let heightValue = parsedHeight, heightValue > 0 else { return nil }
-            heightMeters = heightValue
-        case .feetInches:
-            guard let feet = parsedFeet, feet >= 0 else { return nil }
-            let inches = parsedInches ?? 0
-            let totalInches = (feet * 12.0) + inches
-            guard totalInches > 0 else { return nil }
-            heightMeters = totalInches * 0.0254
-        }
-        let lowerKg = 18.5 * heightMeters * heightMeters
-        let upperKg = 24.9 * heightMeters * heightMeters
-        let lowerLb = lowerKg * 2.20462
-        let upperLb = upperKg * 2.20462
-        return lowerLb...upperLb
-    }
-
     private func addEntry() {
         guard let weight = parsedWeight else { return }
         viewModel.addEntry(date: date, weight: weight, bodyFat: 0)
         weightText = ""
         focusedField = nil
+        FunFeedback.shared.success()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
+            addPulse = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            addPulse = false
+        }
+    }
+
+    private func nextPalette(from palette: BodyPalette) -> BodyPalette {
+        let all = BodyPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousPalette(from palette: BodyPalette) -> BodyPalette {
+        let all = BodyPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
+    }
+
+    private func nextTheme(from theme: BodyGraphTheme) -> BodyGraphTheme {
+        let all = BodyGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousTheme(from theme: BodyGraphTheme) -> BodyGraphTheme {
+        let all = BodyGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
     }
 }
 

@@ -14,6 +14,8 @@ struct ContentView: View {
     @State private var onMeds = false
     @FocusState private var isValueFocused: Bool
     @State private var editingEntry: HbA1cEntry?
+    @State private var isEditingGraph = false
+    @State private var addPulse = false
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -45,11 +47,11 @@ struct ContentView: View {
                                 )
                                 .focused($isValueFocused)
 
-                            Button("Add") {
-                                addEntry()
-                            }
+                            Button("Add") { addEntry() }
                             .buttonStyle(.borderedProminent)
                             .disabled(parsedValue == nil)
+                            .scaleEffect(addPulse ? 1.06 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: addPulse)
                         }
 
                         DatePicker("", selection: $date, displayedComponents: .date)
@@ -74,32 +76,72 @@ struct ContentView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        HStack(spacing: 8) {
+                            Spacer()
+                            if isEditingGraph {
+                                Button("Done") {
+                                    isEditingGraph = false
+                                }
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                            }
+
+                            Button {
+                                isEditingGraph.toggle()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "paintpalette.fill")
+                                    Text("Customize")
+                                }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         GraphView(entries: viewModel.entries,
                                   theme: viewModel.selectedTheme,
                                   palette: viewModel.selectedPalette)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 20)
+                                .onEnded { value in
+                                    guard isEditingGraph else { return }
+                                    let dx = value.translation.width
+                                    let dy = value.translation.height
+                                    if abs(dx) > abs(dy) {
+                                        if dx > 0 {
+                                            viewModel.selectedPalette = nextPalette(from: viewModel.selectedPalette)
+                                        } else {
+                                            viewModel.selectedPalette = previousPalette(from: viewModel.selectedPalette)
+                                        }
+                                    } else {
+                                        if dy < 0 {
+                                            viewModel.selectedTheme = nextTheme(from: viewModel.selectedTheme)
+                                        } else {
+                                            viewModel.selectedTheme = previousTheme(from: viewModel.selectedTheme)
+                                        }
+                                    }
+                                }
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Theme")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(GraphTheme.allCases) { theme in
-                                Text(theme.title).tag(theme)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-
-                        Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(GraphPalette.allCases) { palette in
-                                Text(palette.title).tag(palette)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-                    }
+                    Text(isEditingGraph
+                         ? "Swipe left/right to change color. Swipe up/down to change style."
+                         : "Tap Customize to edit color and style.")
+                        .font(.caption)
+                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(viewModel.selectedPalette.cardBackground.opacity(0.9),
+                                    in: Capsule())
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("History")
@@ -177,6 +219,39 @@ struct ContentView: View {
         viewModel.addEntry(date: date, value: value, onMeds: onMeds)
         valueText = ""
         isValueFocused = false
+        FunFeedback.shared.success()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
+            addPulse = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            addPulse = false
+        }
+    }
+
+    private func nextPalette(from palette: GraphPalette) -> GraphPalette {
+        let all = GraphPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousPalette(from palette: GraphPalette) -> GraphPalette {
+        let all = GraphPalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
+    }
+
+    private func nextTheme(from theme: GraphTheme) -> GraphTheme {
+        let all = GraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousTheme(from theme: GraphTheme) -> GraphTheme {
+        let all = GraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
     }
 }
 

@@ -5,7 +5,6 @@ struct BodyGraphView: View {
     let entries: [BodyMetricsEntry]
     let theme: BodyGraphTheme
     let palette: BodyPalette
-    let healthyWeightRange: ClosedRange<Double>?
     @State private var selectedEntry: BodyMetricsEntry?
 
     var body: some View {
@@ -17,9 +16,6 @@ struct BodyGraphView: View {
                     .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else {
                 Chart {
-                    if showHealthyRange, let range = healthyWeightRange {
-                        healthyRangeMarks(range)
-                    }
                     switch theme {
                     case .pulse:
                         pulseMarks
@@ -102,54 +98,18 @@ struct BodyGraphView: View {
                                       y: max(point.y - 44, plotFrame.minY + 24))
                         }
 
-                        if let range = healthyWeightRange,
-                           let plotFrameAnchor = proxy.plotFrame,
-                           let upperY = proxy.position(forY: range.upperBound),
-                           let lowerY = proxy.position(forY: range.lowerBound) {
-                            let plotFrame = geo[plotFrameAnchor]
-                            let xPos = plotFrame.maxX - 10
-                            let upperPoint = CGPoint(x: xPos, y: plotFrame.minY + upperY)
-                            let lowerPoint = CGPoint(x: xPos, y: plotFrame.minY + lowerY)
-
-                            bmiLabel(text: "BMI 24.9")
-                                .position(x: upperPoint.x, y: max(plotFrame.minY + 14, upperPoint.y))
-
-                            bmiLabel(text: "BMI 18.5")
-                                .position(x: lowerPoint.x, y: min(plotFrame.maxY - 14, lowerPoint.y))
-                        }
                     }
                 }
             }
         }
     }
 
-    private var showHealthyRange: Bool {
-        true
-    }
-
     private var yDomain: ClosedRange<Double> {
         let values = entries.map { $0.weight }
         let minValue = values.min() ?? 0
         let maxValue = values.max() ?? 1
-        var lower = minValue
-        var upper = maxValue
-        if showHealthyRange, let range = healthyWeightRange {
-            lower = min(lower, range.lowerBound)
-            upper = max(upper, range.upperBound)
-        }
-        let padding = max(1, (upper - lower) * 0.08)
-        return (lower - padding)...(upper + padding)
-    }
-
-    @ChartContentBuilder
-    private func healthyRangeMarks(_ range: ClosedRange<Double>) -> some ChartContent {
-        RuleMark(y: .value("BMI Min", range.lowerBound))
-            .lineStyle(StrokeStyle(lineWidth: 1.2, dash: [6, 4]))
-            .foregroundStyle(palette.glow.opacity(0.8))
-
-        RuleMark(y: .value("BMI Max", range.upperBound))
-            .lineStyle(StrokeStyle(lineWidth: 1.2, dash: [6, 4]))
-            .foregroundStyle(palette.glow.opacity(0.8))
+        let padding = max(1, (maxValue - minValue) * 0.08)
+        return (minValue - padding)...(maxValue + padding)
     }
 
     private var pulseMarks: some ChartContent {
@@ -228,12 +188,4 @@ struct BodyGraphView: View {
         entries.min(by: { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) })
     }
 
-    private func bmiLabel(text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(palette.textColor)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(palette.cardBackground, in: Capsule())
-    }
 }

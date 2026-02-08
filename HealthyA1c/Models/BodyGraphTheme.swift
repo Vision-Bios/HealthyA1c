@@ -109,7 +109,7 @@ enum BodyPalette: String, CaseIterable, Identifiable {
         switch self {
         case .aurora: return Color(red: 0.40, green: 0.80, blue: 0.98)
         case .ember: return Color(red: 0.98, green: 0.55, blue: 0.40)
-        case .deep: return Color(red: 0.50, green: 0.35, blue: 0.95)
+        case .deep: return Color(red: 0.30, green: 0.60, blue: 0.95)
         case .prism: return Color(red: 0.45, green: 0.82, blue: 0.90)
         }
     }

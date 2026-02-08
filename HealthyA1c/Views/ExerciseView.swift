@@ -7,12 +7,17 @@ struct ExerciseView: View {
     @State private var showSaveError = false
     @FocusState private var isMinutesFocused: Bool
     @State private var editingEntry: ExerciseEntry?
+    @State private var isEditingGraph = false
+    @State private var addPulse = false
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter
     }()
+
+    private let quickMinutes = [60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5]
+    private let quickGridColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
 
     var body: some View {
         ZStack {
@@ -38,12 +43,37 @@ struct ExerciseView: View {
                                 )
                                 .focused($isMinutesFocused)
 
-                            Button("Add") {
-                                addMinutes()
-                            }
+                            Button("Add") { addMinutes() }
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedPalette.glow)
                             .disabled(parsedMinutes == nil)
+                            .scaleEffect(addPulse ? 1.06 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: addPulse)
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Quick add")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+
+                            LazyVGrid(columns: quickGridColumns, spacing: 8) {
+                                ForEach(quickMinutes, id: \.self) { minutes in
+                                    Button("\(minutes)") {
+                                        minutesText = String(minutes)
+                                        isMinutesFocused = false
+                                    }
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(viewModel.selectedPalette.textColor)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(viewModel.selectedPalette.inputBackground,
+                                                in: Capsule())
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                                    )
+                                }
+                            }
                         }
 
                         DatePicker("", selection: $date, displayedComponents: .date)
@@ -71,32 +101,72 @@ struct ExerciseView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        HStack(spacing: 8) {
+                            Spacer()
+                            if isEditingGraph {
+                                Button("Done") {
+                                    isEditingGraph = false
+                                }
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                            }
+
+                            Button {
+                                isEditingGraph.toggle()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "paintpalette.fill")
+                                    Text("Customize")
+                                }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(viewModel.selectedPalette.cardBackground,
+                                            in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         ExerciseGraphView(entries: viewModel.entries,
                                           theme: viewModel.selectedTheme,
                                           palette: viewModel.selectedPalette)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 20)
+                                .onEnded { value in
+                                    guard isEditingGraph else { return }
+                                    let dx = value.translation.width
+                                    let dy = value.translation.height
+                                    if abs(dx) > abs(dy) {
+                                        if dx > 0 {
+                                            viewModel.selectedPalette = nextPalette(from: viewModel.selectedPalette)
+                                        } else {
+                                            viewModel.selectedPalette = previousPalette(from: viewModel.selectedPalette)
+                                        }
+                                    } else {
+                                        if dy < 0 {
+                                            viewModel.selectedTheme = nextTheme(from: viewModel.selectedTheme)
+                                        } else {
+                                            viewModel.selectedTheme = previousTheme(from: viewModel.selectedTheme)
+                                        }
+                                    }
+                                }
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Theme")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        Picker("Theme", selection: $viewModel.selectedTheme) {
-                            ForEach(ExerciseGraphTheme.allCases) { theme in
-                                Text(theme.title).tag(theme)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-
-                        Picker("Palette", selection: $viewModel.selectedPalette) {
-                            ForEach(ExercisePalette.allCases) { palette in
-                                Text(palette.title).tag(palette)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
-                    }
+                    Text(isEditingGraph
+                         ? "Swipe left/right to change color. Swipe up/down to change style."
+                         : "Tap Customize to edit color and style.")
+                        .font(.caption)
+                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(viewModel.selectedPalette.cardBackground.opacity(0.9),
+                                    in: Capsule())
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("History")
@@ -186,9 +256,43 @@ struct ExerciseView: View {
         if saved {
             minutesText = ""
             isMinutesFocused = false
+            FunFeedback.shared.success()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
+                addPulse = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                addPulse = false
+            }
         } else {
             showSaveError = true
+            FunFeedback.shared.warning()
         }
+    }
+
+    private func nextPalette(from palette: ExercisePalette) -> ExercisePalette {
+        let all = ExercisePalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousPalette(from palette: ExercisePalette) -> ExercisePalette {
+        let all = ExercisePalette.allCases
+        guard let index = all.firstIndex(of: palette) else { return palette }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
+    }
+
+    private func nextTheme(from theme: ExerciseGraphTheme) -> ExerciseGraphTheme {
+        let all = ExerciseGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        return all[(index + 1) % all.count]
+    }
+
+    private func previousTheme(from theme: ExerciseGraphTheme) -> ExerciseGraphTheme {
+        let all = ExerciseGraphTheme.allCases
+        guard let index = all.firstIndex(of: theme) else { return theme }
+        let newIndex = (index - 1 + all.count) % all.count
+        return all[newIndex]
     }
 }
 

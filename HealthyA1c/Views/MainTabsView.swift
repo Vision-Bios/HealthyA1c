@@ -20,7 +20,7 @@ struct MainTabsView: View {
 
             MealsView()
                 .tabItem {
-                    Label("Meals", systemImage: "fork.knife")
+                    Label("Diet", systemImage: "fork.knife")
                 }
 
             ExerciseView()

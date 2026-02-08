@@ -107,7 +107,7 @@ enum GraphPalette: String, CaseIterable, Identifiable {
         switch self {
         case .warm: return Color(red: 0.98, green: 0.64, blue: 0.55)
         case .ocean: return Color(red: 0.30, green: 0.75, blue: 0.92)
-        case .dusk: return Color(red: 0.62, green: 0.38, blue: 0.86)
+        case .dusk: return Color(red: 0.32, green: 0.62, blue: 0.95)
         case .neon: return Color(red: 0.33, green: 0.90, blue: 0.86)
         }
     }
