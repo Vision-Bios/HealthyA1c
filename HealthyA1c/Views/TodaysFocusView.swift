@@ -71,6 +71,20 @@ struct TodaysFocusView: View {
         FocusCategory(rawValue: categoryRaw) ?? .walking
     }
 
+    private func stepDifficulty(_ direction: Int) {
+        let all = Difficulty.allCases
+        guard let index = all.firstIndex(of: selectedDifficulty) else { return }
+        let nextIndex = (index + direction + all.count) % all.count
+        difficultyRaw = all[nextIndex].rawValue
+    }
+
+    private func stepCategory(_ direction: Int) {
+        let all = FocusCategory.allCases
+        guard let index = all.firstIndex(of: selectedCategory) else { return }
+        let nextIndex = (index + direction + all.count) % all.count
+        categoryRaw = all[nextIndex].rawValue
+    }
+
     private var todayFocus: FocusItem {
         let options = focusOptions(for: selectedDifficulty, category: selectedCategory)
         let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
@@ -182,6 +196,21 @@ struct TodaysFocusView: View {
                                 .foregroundStyle(viewModel.selectedPalette.textColor)
                                 .frame(maxWidth: .infinity, alignment: .center)
 
+                            HStack {
+                                Spacer()
+                                Button {
+                                    stepDifficulty(-1)
+                                } label: {
+                                    Image(systemName: "chevron.up")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(8)
+                                        .background(viewModel.selectedPalette.inputBackground,
+                                                    in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                Spacer()
+                            }
+
                             Picker("Difficulty", selection: $difficultyRaw) {
                                 ForEach(Difficulty.allCases) { level in
                                     Text(level.title).tag(level.rawValue)
@@ -191,6 +220,21 @@ struct TodaysFocusView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 130)
                             .clipped()
+
+                            HStack {
+                                Spacer()
+                                Button {
+                                    stepDifficulty(1)
+                                } label: {
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(8)
+                                        .background(viewModel.selectedPalette.inputBackground,
+                                                    in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                Spacer()
+                            }
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -203,6 +247,21 @@ struct TodaysFocusView: View {
                                 .foregroundStyle(viewModel.selectedPalette.textColor)
                                 .frame(maxWidth: .infinity, alignment: .center)
 
+                            HStack {
+                                Spacer()
+                                Button {
+                                    stepCategory(-1)
+                                } label: {
+                                    Image(systemName: "chevron.up")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(8)
+                                        .background(viewModel.selectedPalette.inputBackground,
+                                                    in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                Spacer()
+                            }
+
                             Picker("Category", selection: $categoryRaw) {
                                 ForEach(FocusCategory.allCases) { category in
                                     Text(category.title).tag(category.rawValue)
@@ -212,6 +271,21 @@ struct TodaysFocusView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 130)
                             .clipped()
+
+                            HStack {
+                                Spacer()
+                                Button {
+                                    stepCategory(1)
+                                } label: {
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(8)
+                                        .background(viewModel.selectedPalette.inputBackground,
+                                                    in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                Spacer()
+                            }
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)

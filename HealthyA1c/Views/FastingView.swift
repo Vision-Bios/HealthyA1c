@@ -65,38 +65,13 @@ struct FastingView: View {
 
                         TimelineView(.periodic(from: .now, by: 1)) { context in
                             let elapsed = viewModel.elapsedHours(now: context.date)
-                            let goalHours = selectedGoal.hours
-                            let remaining = goalHours.map { max($0 - elapsed, 0) }
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(viewModel.activeStartDate == nil ? "Not fasting" : "Fasting now")
-                                    .font(.headline)
-                                    .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                                if let remaining {
-                                    Text("Remaining \(formatDuration(remaining))")
-                                        .font(.title3.weight(.semibold))
-                                        .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                                    Text(formatCountdown(remaining))
-                                        .font(.title2.weight(.semibold))
-                                        .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                                    ProgressView(value: min(elapsed / max(remaining + elapsed, 0.01), 1.0))
-                                        .tint(viewModel.selectedPalette.glow)
-                                } else {
-                                    Text("Elapsed \(formatDuration(elapsed))")
-                                        .font(.title3.weight(.semibold))
-                                        .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                                    Text(formatCountdown(elapsed))
-                                        .font(.title2.weight(.semibold))
-                                        .foregroundStyle(viewModel.selectedPalette.textColor)
-                                }
-                            }
-                            .padding(12)
-                            .background(viewModel.selectedPalette.cardBackground,
-                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            Text(formatCountdown(elapsed))
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .monospacedDigit()
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.vertical, 6)
                         }
 
                         if viewModel.activeStartDate == nil {
