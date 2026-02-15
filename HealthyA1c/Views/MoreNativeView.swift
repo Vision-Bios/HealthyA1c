@@ -16,6 +16,9 @@ struct MoreNativeView: View {
                 NavigationLink(destination: ExerciseView()) {
                     Label("Walking", systemImage: "figure.walk.circle")
                 }
+                NavigationLink(destination: SleepView()) {
+                    Label("Sleep", systemImage: "bed.double.fill")
+                }
                 NavigationLink(destination: FastingView()) {
                     Label("Fasting", systemImage: "timer")
                 }
