@@ -81,19 +81,6 @@ struct SleepView: View {
                             .labelsHidden()
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        HStack {
-                            Text("Goal 7 hrs/day")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                            Spacer()
-                            Text("Remaining \(remainingText)")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(viewModel.selectedPalette.cardBackground,
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -201,14 +188,6 @@ struct SleepView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Goal: 7 hours of sleep per day.")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Track total sleep, including naps, to hit your daily goal.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding()
             }

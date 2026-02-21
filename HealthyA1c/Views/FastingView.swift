@@ -55,6 +55,10 @@ struct FastingView: View {
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        Text("Consult with your healthcare professional to learn about any particular health associated risks before fasting.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+
                         Picker("Goal", selection: $goalHoursRaw) {
                             ForEach(FastingGoal.allCases) { goal in
                                 Text(goal.title).tag(goal.rawValue)
@@ -200,14 +204,6 @@ struct FastingView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Goal rhythms:")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("24h fasts 2–3x / week or 16h fasts 5–6x / week.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding()
             }

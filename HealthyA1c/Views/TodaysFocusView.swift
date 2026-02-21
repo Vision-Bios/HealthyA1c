@@ -5,6 +5,7 @@ struct TodaysFocusView: View {
     @StateObject private var goalsViewModel = AccomplishedGoalsViewModel()
     @AppStorage("todaysFocusDifficulty") private var difficultyRaw = Difficulty.medium.rawValue
     @AppStorage("todaysFocusCategory") private var categoryRaw = FocusCategory.walking.rawValue
+    @AppStorage("dietTrackedItem") private var trackedItem = ""
     @State private var focusPulse = false
 
     private struct FocusItem {
@@ -35,7 +36,6 @@ struct TodaysFocusView: View {
     }
 
     private enum FocusCategory: String, CaseIterable, Identifiable {
-        case fasting
         case diet
         case walking
 
@@ -43,7 +43,6 @@ struct TodaysFocusView: View {
 
         var title: String {
             switch self {
-            case .fasting: return "Fasting"
             case .diet: return "Diet"
             case .walking: return "Walking"
             }
@@ -69,6 +68,17 @@ struct TodaysFocusView: View {
 
     private var selectedCategory: FocusCategory {
         FocusCategory(rawValue: categoryRaw) ?? .walking
+    }
+
+    private var trackedItemLabel: String {
+        let trimmed = trackedItem.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "soda" : trimmed
+    }
+
+    private func pluralItem(_ text: String) -> String {
+        let lower = text.lowercased()
+        if lower.hasSuffix("s") { return text }
+        return "\(text)s"
     }
 
     private func stepDifficulty(_ direction: Int) {
@@ -97,6 +107,8 @@ struct TodaysFocusView: View {
 
     private func focusOptions(for difficulty: Difficulty, category: FocusCategory) -> [FocusItem] {
         let allOptions: [FocusItem]
+        let item = trackedItemLabel
+        let pluralItem = pluralItem(item)
         switch difficulty {
         case .hardest:
             allOptions = [
@@ -104,12 +116,8 @@ struct TodaysFocusView: View {
                           detail: "Split it up if you need to.",
                           symbol: "figure.walk",
                           category: .walking),
-                FocusItem(title: "Fast 24 hours",
-                          detail: "Hydrate well and keep it calm and steady.",
-                          symbol: "timer",
-                          category: .fasting),
-                FocusItem(title: "Zero-carb meals only",
-                          detail: "Stay clean and simple today.",
+                FocusItem(title: "No \(pluralItem) today",
+                          detail: "Skip it completely for a full reset.",
                           symbol: "leaf",
                           category: .diet)
             ]
@@ -119,42 +127,30 @@ struct TodaysFocusView: View {
                           detail: "Two short walks works great.",
                           symbol: "figure.walk",
                           category: .walking),
-                FocusItem(title: "Fast 16 hours",
-                          detail: "Keep your eating window tight today.",
-                          symbol: "hourglass",
-                          category: .fasting),
-                FocusItem(title: "Max 1 meal with carbs",
-                          detail: "The rest zero-carb if you can.",
+                FocusItem(title: "Max 1 \(item) today",
+                          detail: "Keep it to one and stop there.",
                           symbol: "leaf",
                           category: .diet)
             ]
         case .easy:
             allOptions = [
-                FocusItem(title: "Fast 8 hours",
-                          detail: "Overnight counts.",
-                          symbol: "hourglass",
-                          category: .fasting),
                 FocusItem(title: "Walk fast 15 minutes",
                           detail: "Short, brisk, and done.",
                           symbol: "figure.walk",
                           category: .walking),
-                FocusItem(title: "Up to 2 carb meals + 1 treat",
-                          detail: "One sugary snack or drink max.",
+                FocusItem(title: "Max 2 \(pluralItem) today",
+                          detail: "Keep it limited and spaced out.",
                           symbol: "cup.and.saucer",
                           category: .diet)
             ]
         case .superEasy:
             allOptions = [
-                FocusItem(title: "Fast 4 hours",
-                          detail: "Keep it light and easy.",
-                          symbol: "hourglass",
-                          category: .fasting),
                 FocusItem(title: "Walk fast 10 minutes",
                           detail: "A quick burst today.",
                           symbol: "figure.walk",
                           category: .walking),
-                FocusItem(title: "Max 2 carb meals + 2 snacks",
-                          detail: "Two sugary snacks or drinks max.",
+                FocusItem(title: "Max 3 \(pluralItem) today",
+                          detail: "Cap it at three if you can.",
                           symbol: "takeoutbag.and.cup.and.straw",
                           category: .diet)
             ]
@@ -164,12 +160,8 @@ struct TodaysFocusView: View {
                           detail: "Go easy and listen to your body.",
                           symbol: "figure.run",
                           category: .walking),
-                FocusItem(title: "Fast 1 hour",
-                          detail: "A small win still counts.",
-                          symbol: "timer",
-                          category: .fasting),
-                FocusItem(title: "Max 2 carb meals + 3 snacks",
-                          detail: "Three sugary snacks or drinks max.",
+                FocusItem(title: "One less \(item) than usual",
+                          detail: "If you want it, pause and skip one.",
                           symbol: "fork.knife",
                           category: .diet)
             ]
@@ -193,7 +185,7 @@ struct TodaysFocusView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Difficulty")
                                 .font(.headline.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity, alignment: .center)
 
                             HStack {
@@ -213,9 +205,13 @@ struct TodaysFocusView: View {
 
                             Picker("Difficulty", selection: $difficultyRaw) {
                                 ForEach(Difficulty.allCases) { level in
-                                    Text(level.title).tag(level.rawValue)
+                                    Text(level.title)
+                                        .foregroundStyle(.white)
+                                        .tag(level.rawValue)
                                 }
                             }
+                            .colorMultiply(.white)
+                            .foregroundStyle(.white)
                             .pickerStyle(.wheel)
                             .frame(maxWidth: .infinity)
                             .frame(height: 130)
@@ -244,7 +240,7 @@ struct TodaysFocusView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Category")
                                 .font(.headline.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
+                                .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity, alignment: .center)
 
                             HStack {
@@ -264,9 +260,13 @@ struct TodaysFocusView: View {
 
                             Picker("Category", selection: $categoryRaw) {
                                 ForEach(FocusCategory.allCases) { category in
-                                    Text(category.title).tag(category.rawValue)
+                                    Text(category.title)
+                                        .foregroundStyle(.white)
+                                        .tag(category.rawValue)
                                 }
                             }
+                            .colorMultiply(.white)
+                            .foregroundStyle(.white)
                             .pickerStyle(.wheel)
                             .frame(maxWidth: .infinity)
                             .frame(height: 130)

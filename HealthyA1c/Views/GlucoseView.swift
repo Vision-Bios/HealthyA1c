@@ -171,10 +171,14 @@ struct GlucoseView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Fasting: no calories for 8+ hours.")
+                        Text("Definitions")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Post‑meal: 2 hours after eating.")
+
+                        Text("Fasting: no calories for 8+ hours.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("Post‑meal: 2 hours after eating (withouth eating anything after that).")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text("Random: any time of day.")
@@ -184,15 +188,24 @@ struct GlucoseView: View {
                         Text("Ranges:")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Fasting: Normal 70–99, Prediabetes 100–125, Diabetes ≥126 (2 tests).")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text("Post‑meal: Normal <140, Prediabetes 140–199, Diabetes ≥200.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text("Random: Normal typically <140, Diabetes likely ≥200.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 6) {
+                            Text("Fasting: Normal <100 mg/dL.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Link("View citation",
+                                 destination: URL(string: "https://diabetes.org/about-diabetes/diagnosis")!)
+                                .font(.caption2)
+                                .foregroundStyle(viewModel.selectedPalette.glow)
+                        }
+                        HStack(spacing: 6) {
+                            Text("Post‑meal: Normal <180 mg/dL.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Link("View citation",
+                                 destination: URL(string: "https://diabetes.org/living-with-diabetes/treatment-care/checking-your-blood-sugar")!)
+                                .font(.caption2)
+                                .foregroundStyle(viewModel.selectedPalette.glow)
+                        }
                     }
                 }
                 .padding()

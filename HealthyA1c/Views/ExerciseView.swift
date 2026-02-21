@@ -201,14 +201,6 @@ struct ExerciseView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Goal: 60 minutes per day.")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Add walks throughout the day; totals update for the same date.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding()
             }

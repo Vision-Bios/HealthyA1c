@@ -183,6 +183,16 @@ struct ContentView: View {
                             }
                         }
                     }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Clinical note: HbA1c below 6.5% for 3+ months without diabetes medication indicates type 2 diabetes remission.")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedPalette.textColor)
+                        Link("View citation",
+                             destination: URL(string: "https://diabetes.org/newsroom/international-experts-outline-diabetes-remission-diagnosis-criteria")!)
+                            .font(.caption)
+                            .foregroundStyle(viewModel.selectedPalette.glow)
+                    }
                 }
                 .padding()
             }

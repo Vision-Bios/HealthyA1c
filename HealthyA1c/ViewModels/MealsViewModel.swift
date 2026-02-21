@@ -26,21 +26,16 @@ final class MealsViewModel: ObservableObject {
     }
 
     @discardableResult
-    func addEntry(date: Date, count: Int, carbs: CarbStatus) -> Bool {
+    func addItemCount(date: Date, count: Int) -> Bool {
         guard count > 0 else { return false }
         let day = Calendar.current.startOfDay(for: date)
         if let index = entries.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: day) }) {
             withAnimation {
-                if carbs == .zeroCarbs {
-                    entries[index].zeroCarbsCount += count
-                } else {
-                    entries[index].carbsCount += count
-                }
+                entries[index].carbsCount += count
+                entries[index].zeroCarbsCount = 0
             }
         } else {
-            let zero = carbs == .zeroCarbs ? count : 0
-            let carbsCount = carbs == .carbsPresent ? count : 0
-            let entry = MealEntry(date: day, zeroCarbsCount: zero, carbsCount: carbsCount)
+            let entry = MealEntry(date: day, zeroCarbsCount: 0, carbsCount: count)
             withAnimation {
                 entries.append(entry)
             }
@@ -55,8 +50,8 @@ final class MealsViewModel: ObservableObject {
         store.save(entries)
     }
 
-    func updateEntry(id: UUID, date: Date, zeroCarbs: Int, carbs: Int) {
-        guard zeroCarbs >= 0, carbs >= 0 else { return }
+    func updateEntry(id: UUID, date: Date, count: Int) {
+        guard count >= 0 else { return }
         let newDay = Calendar.current.startOfDay(for: date)
         guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
 
@@ -64,15 +59,15 @@ final class MealsViewModel: ObservableObject {
             $0.id != id && Calendar.current.isDate($0.date, inSameDayAs: newDay)
         }) {
             withAnimation {
-                entries[existingIndex].zeroCarbsCount += zeroCarbs
-                entries[existingIndex].carbsCount += carbs
+                entries[existingIndex].carbsCount += count
+                entries[existingIndex].zeroCarbsCount = 0
                 entries.remove(at: index)
             }
         } else {
             entries[index] = MealEntry(id: id,
                                        date: newDay,
-                                       zeroCarbsCount: zeroCarbs,
-                                       carbsCount: carbs)
+                                       zeroCarbsCount: 0,
+                                       carbsCount: count)
         }
         entries.sort { $0.date < $1.date }
         store.save(entries)

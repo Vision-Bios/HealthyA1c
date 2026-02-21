@@ -3,7 +3,7 @@ import SwiftUI
 struct MealsView: View {
     @StateObject private var viewModel = MealsViewModel()
     @State private var date = Date()
-    @State private var carbs: CarbStatus = .zeroCarbs
+    @AppStorage("dietTrackedItem") private var trackedItem = ""
     @State private var showSaveError = false
     @State private var editingEntry: MealEntry?
     @State private var isEditingGraph = false
@@ -26,18 +26,22 @@ struct MealsView: View {
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
+                        TextField("Track item (e.g., soda)", text: $trackedItem)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(viewModel.selectedPalette.inputBackground,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                            )
+
                         DatePicker("", selection: $date, displayedComponents: .date)
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        Picker("Carbs", selection: $carbs) {
-                            ForEach(CarbStatus.allCases) { status in
-                                Text(status.title).tag(status)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
 
                         Button("Add") { addEntry() }
                         .buttonStyle(.borderedProminent)
@@ -83,6 +87,7 @@ struct MealsView: View {
                         }
 
                         MealsGraphView(entries: viewModel.entries,
+                                       itemName: trackedItemLabel,
                                        theme: viewModel.selectedTheme,
                                        palette: viewModel.selectedPalette)
                         .highPriorityGesture(
@@ -126,7 +131,7 @@ struct MealsView: View {
                         ForEach(viewModel.entries.sorted(by: { $0.date > $1.date })) { entry in
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("\(entry.zeroCarbsCount) zero · \(entry.carbsCount) carbs")
+                                    Text("\(entryTotal(entry)) \(itemLabel(for: entryTotal(entry)))")
                                         .font(.title3.weight(.semibold))
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(dateFormatter.string(from: entry.date))
@@ -151,14 +156,6 @@ struct MealsView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Goal: zero‑carb meals.")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-                        Text("Track meals per day and mark carbs or zero carbs.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding()
             }
@@ -177,14 +174,29 @@ struct MealsView: View {
                            }) { updated in
                 viewModel.updateEntry(id: updated.id,
                                       date: updated.date,
-                                      zeroCarbs: updated.zeroCarbsCount,
-                                      carbs: updated.carbsCount)
+                                      count: updated.carbsCount + updated.zeroCarbsCount)
             }
         }
     }
 
+    private var trackedItemLabel: String {
+        let trimmed = trackedItem.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "item" : trimmed
+    }
+
+    private func itemLabel(for count: Int) -> String {
+        let base = trackedItemLabel
+        if count == 1 { return base }
+        if base.lowercased().hasSuffix("s") { return base }
+        return "\(base)s"
+    }
+
+    private func entryTotal(_ entry: MealEntry) -> Int {
+        entry.zeroCarbsCount + entry.carbsCount
+    }
+
     private func addEntry() {
-        let saved = viewModel.addEntry(date: date, count: 1, carbs: carbs)
+        let saved = viewModel.addItemCount(date: date, count: 1)
         if saved {
             FunFeedback.shared.success()
             withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
@@ -238,8 +250,7 @@ private struct MealsEditSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var date: Date
-    @State private var zeroText: String
-    @State private var carbsText: String
+    @State private var countText: String
 
     init(entry: MealEntry,
          palette: MealsPalette,
@@ -250,17 +261,14 @@ private struct MealsEditSheet: View {
         self.onDelete = onDelete
         self.onSave = onSave
         _date = State(initialValue: entry.date)
-        _zeroText = State(initialValue: String(entry.zeroCarbsCount))
-        _carbsText = State(initialValue: String(entry.carbsCount))
+        _countText = State(initialValue: String(entry.zeroCarbsCount + entry.carbsCount))
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 DatePicker("Date", selection: $date, displayedComponents: .date)
-                TextField("Zero‑carb meals", text: $zeroText)
-                    .keyboardType(.numberPad)
-                TextField("Carb meals", text: $carbsText)
+                TextField("Count", text: $countText)
                     .keyboardType(.numberPad)
             }
             .navigationTitle("Edit Diet")
@@ -276,8 +284,8 @@ private struct MealsEditSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        guard let zero = Int(zeroText), let carbs = Int(carbsText) else { return }
-                        onSave(MealEntry(id: entry.id, date: date, zeroCarbsCount: zero, carbsCount: carbs))
+                        guard let count = Int(countText) else { return }
+                        onSave(MealEntry(id: entry.id, date: date, zeroCarbsCount: 0, carbsCount: count))
                         dismiss()
                     }
                 }

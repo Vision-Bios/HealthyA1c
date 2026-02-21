@@ -17,7 +17,9 @@ struct GlucoseGraphView: View {
                     .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else {
                 Chart {
-                    rangeLines
+                    if type != .random {
+                        rangeLines
+                    }
 
                     switch theme {
                     case .ribbon:
@@ -105,7 +107,14 @@ struct GlucoseGraphView: View {
     }
 
     private var thresholds: [Double] {
-        [70, 139]
+        switch type {
+        case .postMeal:
+            return [180]
+        case .fasting:
+            return [100]
+        case .random:
+            return [70, 139]
+        }
     }
 
     private var yDomain: ClosedRange<Double> {

@@ -3,9 +3,10 @@ import Charts
 
 struct MealsGraphView: View {
     let entries: [MealEntry]
+    let itemName: String
     let theme: MealsGraphTheme
     let palette: MealsPalette
-    @State private var selectedDay: DailyMeals?
+    @State private var selectedDay: DailyItemCount?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -59,7 +60,7 @@ struct MealsGraphView: View {
                         if let selectedDay,
                            let plotFrameAnchor = proxy.plotFrame,
                            let xPos = proxy.position(forX: selectedDay.date),
-                           let yPos = proxy.position(forY: Double(selectedDay.zeroCarbs + selectedDay.carbs)) {
+                           let yPos = proxy.position(forY: Double(selectedDay.count)) {
                             let plotFrame = geo[plotFrameAnchor]
                             let point = CGPoint(x: plotFrame.minX + xPos,
                                                 y: plotFrame.minY + yPos)
@@ -82,7 +83,7 @@ struct MealsGraphView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(selectedDay.date, style: .date)
                                     .font(.caption.weight(.semibold))
-                                Text("\(selectedDay.zeroCarbs) zero · \(selectedDay.carbs) carbs")
+                                Text("\(selectedDay.count) \(itemLabel(for: selectedDay.count))")
                                     .font(.caption)
                                     .foregroundStyle(palette.glow)
                             }
@@ -98,9 +99,9 @@ struct MealsGraphView: View {
         }
     }
 
-    private var dailyStats: [DailyMeals] {
+    private var dailyStats: [DailyItemCount] {
         entries.sorted { $0.date < $1.date }.map {
-            DailyMeals(date: $0.date, zeroCarbs: $0.zeroCarbsCount, carbs: $0.carbsCount)
+            DailyItemCount(date: $0.date, count: $0.zeroCarbsCount + $0.carbsCount)
         }
     }
 
@@ -108,68 +109,67 @@ struct MealsGraphView: View {
         ForEach(dailyStats) { day in
             BarMark(
                 x: .value("Date", day.date),
-                y: .value("Zero", day.zeroCarbs)
+                y: .value("Count", day.count)
             )
             .foregroundStyle(palette.gradient)
-            .position(by: .value("Type", "Zero"))
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-
-            BarMark(
-                x: .value("Date", day.date),
-                y: .value("Carbs", day.carbs)
-            )
-            .foregroundStyle(palette.glow.opacity(0.7))
-            .position(by: .value("Type", "Carbs"))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
     }
 
     private var flowMarks: some ChartContent {
         ForEach(dailyStats) { day in
+            AreaMark(
+                x: .value("Date", day.date),
+                yStart: .value("Floor", 0),
+                yEnd: .value("Count", day.count)
+            )
+            .interpolationMethod(.catmullRom)
+            .foregroundStyle(palette.gradient.opacity(0.35))
+
             LineMark(
                 x: .value("Date", day.date),
-                y: .value("Zero", day.zeroCarbs)
+                y: .value("Count", day.count)
             )
             .interpolationMethod(.catmullRom)
             .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
             .foregroundStyle(palette.gradient)
-
-            LineMark(
-                x: .value("Date", day.date),
-                y: .value("Carbs", day.carbs)
-            )
-            .interpolationMethod(.catmullRom)
-            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, dash: [6, 4]))
-            .foregroundStyle(palette.glow.opacity(0.8))
         }
     }
 
     private var orbitMarks: some ChartContent {
         ForEach(dailyStats) { day in
-            PointMark(
+            LineMark(
                 x: .value("Date", day.date),
-                y: .value("Zero", day.zeroCarbs)
+                y: .value("Count", day.count)
             )
-            .symbolSize(80)
+            .interpolationMethod(.catmullRom)
+            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
             .foregroundStyle(palette.gradient)
 
             PointMark(
                 x: .value("Date", day.date),
-                y: .value("Carbs", day.carbs)
+                y: .value("Count", day.count)
             )
-            .symbolSize(50)
-            .foregroundStyle(palette.glow.opacity(0.8))
+            .symbolSize(70)
+            .foregroundStyle(palette.glow)
         }
     }
 
-    private func nearestDay(to date: Date) -> DailyMeals? {
+    private func nearestDay(to date: Date) -> DailyItemCount? {
         dailyStats.min(by: { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) })
+    }
+
+    private func itemLabel(for count: Int) -> String {
+        let trimmed = itemName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let base = trimmed.isEmpty ? "item" : trimmed
+        if count == 1 { return base }
+        if base.lowercased().hasSuffix("s") { return base }
+        return "\(base)s"
     }
 }
 
-private struct DailyMeals: Identifiable {
+private struct DailyItemCount: Identifiable {
     let id = UUID()
     let date: Date
-    let zeroCarbs: Int
-    let carbs: Int
+    let count: Int
 }
