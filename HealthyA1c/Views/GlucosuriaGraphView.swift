@@ -10,7 +10,7 @@ struct GlucosuriaGraphView: View {
         VStack(alignment: .leading, spacing: 12) {
             if entries.isEmpty {
                 Text("No data")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(maxWidth: .infinity, minHeight: 180)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else {

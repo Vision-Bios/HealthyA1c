@@ -81,19 +81,6 @@ struct ExerciseView: View {
                             .labelsHidden()
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        HStack {
-                            Text("Goal 60 min/day")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                            Spacer()
-                            Text("Remaining \(remainingText)")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(viewModel.selectedPalette.cardBackground,
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -181,7 +168,7 @@ struct ExerciseView: View {
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(dateFormatter.string(from: entry.date))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.65))
                                 }
                                 Spacer()
                             }

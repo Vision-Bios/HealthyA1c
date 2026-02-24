@@ -44,58 +44,42 @@ struct FastingView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Capsule()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 46, height: 5)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 4)
-
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Fasting")
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
 
-                        Text("Consult with your healthcare professional to learn about any particular health associated risks before fasting.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 16) {
+                            TimelineView(.periodic(from: .now, by: 1)) { context in
+                                let elapsed = viewModel.elapsedHours(now: context.date)
 
-                        Picker("Goal", selection: $goalHoursRaw) {
-                            ForEach(FastingGoal.allCases) { goal in
-                                Text(goal.title).tag(goal.rawValue)
+                                Text(formatCountdown(elapsed))
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(viewModel.selectedPalette.textColor)
+                                    .monospacedDigit()
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 6)
                             }
-                        }
-                        .pickerStyle(.segmented)
-                        .tint(viewModel.selectedPalette.glow)
 
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            let elapsed = viewModel.elapsedHours(now: context.date)
-
-                            Text(formatCountdown(elapsed))
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                                .monospacedDigit()
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, 6)
-                        }
-
-                        if viewModel.activeStartDate == nil {
-                            Button("Start") {
-                                viewModel.startFast()
-                                triggerActionFeedback()
+                            if viewModel.activeStartDate == nil {
+                                Button("Start") {
+                                    viewModel.startFast()
+                                    triggerActionFeedback()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(viewModel.selectedPalette.glow)
+                                .scaleEffect(actionPulse ? 1.06 : 1.0)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
+                            } else {
+                                Button("End & Save") {
+                                    _ = viewModel.endFast()
+                                    triggerActionFeedback()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(viewModel.selectedPalette.glow)
+                                .scaleEffect(actionPulse ? 1.06 : 1.0)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(viewModel.selectedPalette.glow)
-                            .scaleEffect(actionPulse ? 1.06 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
-                        } else {
-                            Button("End & Save") {
-                                _ = viewModel.endFast()
-                                triggerActionFeedback()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(viewModel.selectedPalette.glow)
-                            .scaleEffect(actionPulse ? 1.06 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: actionPulse)
                         }
                     }
 
@@ -184,7 +168,7 @@ struct FastingView: View {
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(dateFormatter.string(from: entry.date))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.65))
                                 }
                                 Spacer()
                             }
@@ -203,6 +187,10 @@ struct FastingView: View {
                             }
                         }
                     }
+
+                    Text("Fasting may involve potential health risks. You should seek guidance from a qualified healthcare provider before initiating any fasting practice, especially if you have underlying medical conditions, take medications, or have concerns about your health.")
+                        .font(.footnote)
+                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.65))
 
                 }
                 .padding()

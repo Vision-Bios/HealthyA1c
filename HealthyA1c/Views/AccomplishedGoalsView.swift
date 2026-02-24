@@ -32,7 +32,7 @@ struct AccomplishedGoalsView: View {
 
                         Text("Each accomplished goal = 1 point")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.75))
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -42,7 +42,7 @@ struct AccomplishedGoalsView: View {
                     if goalsViewModel.goals.isEmpty {
                         Text("No goals completed yet.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.75))
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(paletteViewModel.selectedPalette.cardBackground,
@@ -62,7 +62,7 @@ struct AccomplishedGoalsView: View {
 
                                 Text(goal.detail)
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.75))
 
                                 if !goal.notes.isEmpty {
                                     Text(goal.notes)
@@ -73,7 +73,7 @@ struct AccomplishedGoalsView: View {
 
                                 Text(dateFormatter.string(from: goal.date))
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.65))
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -129,7 +129,7 @@ private struct GoalNotesSheet: View {
                         .font(.headline)
                     Text(goal.detail)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textColor.opacity(0.75))
                 }
 
                 Section("Notes") {

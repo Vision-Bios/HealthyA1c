@@ -13,13 +13,11 @@ struct SleepGraphView: View {
         VStack(alignment: .leading, spacing: 12) {
             if entries.isEmpty {
                 Text("No data")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textColor.opacity(0.75))
                     .frame(maxWidth: .infinity, minHeight: 180)
                     .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else {
                 Chart {
-                    goalLine
-
                     switch theme {
                     case .pulse:
                         pulseMarks

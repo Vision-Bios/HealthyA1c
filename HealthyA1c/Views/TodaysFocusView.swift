@@ -294,36 +294,6 @@ struct TodaysFocusView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Your last A1c")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedPalette.textColor)
-
-                        if let entry = latestEntry {
-                            Text(String(format: "%.1f%%", entry.value))
-                                .font(.system(size: 36, weight: .semibold))
-                                .foregroundStyle(viewModel.selectedPalette.glow)
-
-                            if entry.value >= 6.5 {
-                                Text("Goal: below 6.5%")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(viewModel.selectedPalette.textColor)
-                            } else {
-                                Text("Below 6.5% - keep it steady")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(viewModel.selectedPalette.textColor)
-                            }
-                        } else {
-                            Text("Add your first A1c to unlock focus")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(viewModel.selectedPalette.textColor)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(viewModel.selectedPalette.cardBackground,
-                                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 10) {
                         Text("Focus for today")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(viewModel.selectedPalette.textColor)
@@ -331,7 +301,7 @@ struct TodaysFocusView: View {
                         if !hasEntry {
                             Text("Add your first A1c to get a focus goal.")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                         } else if needsFocus {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack(alignment: .top, spacing: 12) {
@@ -345,7 +315,7 @@ struct TodaysFocusView: View {
                                             .foregroundStyle(viewModel.selectedPalette.textColor)
                                         Text(todayFocus.detail)
                                             .font(.subheadline)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                                     }
                                 }
 
@@ -385,7 +355,37 @@ struct TodaysFocusView: View {
                         } else {
                             Text("You're under 6.5% - choose any habit you want to reinforce today.")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(viewModel.selectedPalette.cardBackground,
+                                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Your last A1c")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedPalette.textColor)
+
+                        if let entry = latestEntry {
+                            Text(String(format: "%.1f%%", entry.value))
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundStyle(viewModel.selectedPalette.glow)
+
+                            if entry.value >= 6.5 {
+                                Text("Goal: below 6.5%")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(viewModel.selectedPalette.textColor)
+                            } else {
+                                Text("Below 6.5% - keep it steady")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(viewModel.selectedPalette.textColor)
+                            }
+                        } else {
+                            Text("Add your first A1c to unlock focus")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(viewModel.selectedPalette.textColor)
                         }
                     }
                     .padding(16)

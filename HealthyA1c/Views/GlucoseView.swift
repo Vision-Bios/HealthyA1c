@@ -147,12 +147,12 @@ struct GlucoseView: View {
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(entry.type.title)
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                                 }
                                 Spacer()
                                 Text(dateFormatter.string(from: entry.date))
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.65))
                             }
                             .padding(12)
                             .background(viewModel.selectedPalette.cardBackground,
@@ -177,13 +177,13 @@ struct GlucoseView: View {
 
                         Text("Fasting: no calories for 8+ hours.")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                         Text("Post‑meal: 2 hours after eating (withouth eating anything after that).")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                         Text("Random: any time of day.")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
 
                         Text("Ranges:")
                             .font(.footnote.weight(.semibold))
@@ -191,7 +191,7 @@ struct GlucoseView: View {
                         HStack(spacing: 6) {
                             Text("Fasting: Normal <100 mg/dL.")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                             Link("View citation",
                                  destination: URL(string: "https://diabetes.org/about-diabetes/diagnosis")!)
                                 .font(.caption2)
@@ -200,7 +200,7 @@ struct GlucoseView: View {
                         HStack(spacing: 6) {
                             Text("Post‑meal: Normal <180 mg/dL.")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.75))
                             Link("View citation",
                                  destination: URL(string: "https://diabetes.org/living-with-diabetes/treatment-care/checking-your-blood-sugar")!)
                                 .font(.caption2)

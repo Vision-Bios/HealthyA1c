@@ -156,7 +156,7 @@ struct ContentView: View {
                                         .foregroundStyle(viewModel.selectedPalette.textColor)
                                     Text(dateFormatter.string(from: entry.date))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(viewModel.selectedPalette.textColor.opacity(0.65))
                                 }
                                 Spacer()
                                 if entry.onMeds {

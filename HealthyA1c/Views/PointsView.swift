@@ -28,7 +28,7 @@ struct PointsView: View {
 
                         Text("Goals you completed in Today's Focus.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.75))
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -121,7 +121,7 @@ struct PointsView: View {
                     .foregroundStyle(paletteViewModel.selectedPalette.textColor)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(paletteViewModel.selectedPalette.textColor.opacity(0.7))
             }
 
             Spacer()
